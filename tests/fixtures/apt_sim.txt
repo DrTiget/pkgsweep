@@ -1,0 +1,7 @@
+Reading package lists...
+The following packages will be REMOVED:
+  vlc* libvlc5*
+Purg vlc [3.0.21]
+Purg libvlc5:amd64 [3.0.21]
+Remv ubuntu-desktop [1.5]
+Conf foo (1.0 bar)

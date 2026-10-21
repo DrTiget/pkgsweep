@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Менеджер программ
+Comment=Просмотр и удаление пакетов APT, Snap и Flatpak
+Exec=pkgsweep
+Icon=io.github.drtiget.PkgSweep
+Categories=System;Settings;PackageManager;GTK;
+Terminal=false

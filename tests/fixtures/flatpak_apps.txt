@@ -1,0 +1,2 @@
+org.gimp.GIMP	GIMP	2.10.36	1.2 GB	system
+org.foo.App	Foo	1.0	350,5 MB	user

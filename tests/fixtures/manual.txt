@@ -1,0 +1,3 @@
+vlc
+bash
+gnome-shell

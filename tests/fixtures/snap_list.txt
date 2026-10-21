@@ -1,0 +1,5 @@
+Name               Version        Rev    Tracking       Publisher   Notes
+core22             20240111       1033   latest/stable  canonical✓  base
+firefox            125.0.1-1      4033   latest/stable  mozilla✓    -
+gnome-42-2204      0+git.ff35a85  176    latest/stable  canonical✓  -
+snapd              2.62           21465  latest/stable  canonical✓  snapd
