@@ -14,6 +14,10 @@ class Package:
     manual: bool = True  # False -> зависимость/база/рантайм
     protected: bool = False
     display_name: str = ""
+    installed: float = None   # epoch установки или None
+    last_used: float = None   # epoch последнего запуска (best-effort) или None
+    icon: str = ""            # имя иконки темы или абсолютный путь
+    selected: bool = False    # состояние чекбокса хранится в модели, не в виджете
     extra: dict = field(default_factory=dict)
 
     @property
@@ -45,6 +49,10 @@ class Backend:
 
     def list(self):
         raise NotImplementedError
+
+    def collect(self, pkgs):
+        """Тяжёлый сбор метаданных (фон). Возвращает {name: {display_name, description, icon, installed, last_used}}."""
+        return {}
 
     def simulate_remove(self, names):
         return Simulation(removed=list(names), critical=[])

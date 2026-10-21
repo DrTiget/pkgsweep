@@ -1,0 +1,9 @@
+Package: vlc
+Description-md5: aaa
+Description-ru: многофункциональный медиаплеер
+ Длинное описание.
+
+Package: curl
+Description-md5: bbb
+Description-ru: инструмент передачи данных по URL
+ Длинное.

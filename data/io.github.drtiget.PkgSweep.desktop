@@ -1,8 +1,13 @@
 [Desktop Entry]
 Type=Application
-Name=Менеджер программ
-Comment=Просмотр и удаление пакетов APT, Snap и Flatpak
+Name=PkgSweep
+Name[ru]=PkgSweep — менеджер программ
+Comment=Browse and remove APT, Snap and Flatpak packages
+Comment[ru]=Просмотр и удаление пакетов APT, Snap и Flatpak
 Exec=pkgsweep
 Icon=io.github.drtiget.PkgSweep
+StartupWMClass=io.github.drtiget.PkgSweep
+StartupNotify=true
 Categories=System;Settings;PackageManager;GTK;
+Keywords=apt;snap;flatpak;uninstall;packages;
 Terminal=false

@@ -1,6 +1,8 @@
+import os
+
 from .base import Backend, Package, have, run
 
-COLUMNS = "application,name,version,size,installation"
+COLUMNS = "application,name,version,size,installation,description"
 
 
 def parse_size(s):
@@ -26,10 +28,24 @@ def parse_list(text, runtime):
         if len(c) < 5 or not c[0].strip():
             continue
         app, name, ver, size, inst = [x.strip() for x in c[:5]]
+        desc = c[5].strip() if len(c) > 5 else ""
         pkgs.append(Package(name=app, display_name=name, source="flatpak", version=ver,
-                            size=parse_size(size), description=name if name != app else "",
+                            size=parse_size(size), description=desc or (name if name != app else ""),
                             manual=not runtime, extra={"installation": inst, "runtime": runtime}))
     return pkgs
+
+
+def install_root(inst):
+    if inst == "user":
+        return os.path.expanduser("~/.local/share/flatpak")
+    if inst in ("system", ""):
+        return "/var/lib/flatpak"
+    return None
+
+
+def export_icon_dirs():
+    return [d for d in (os.path.expanduser("~/.local/share/flatpak/exports/share/icons"),
+                        "/var/lib/flatpak/exports/share/icons") if os.path.isdir(d)]
 
 
 class FlatpakBackend(Backend):
@@ -45,6 +61,23 @@ class FlatpakBackend(Backend):
             _, out = run(cmd)
             pkgs += parse_list(out, rt)
         return pkgs
+
+    def collect(self, pkgs):
+        res = {}
+        for p in pkgs:
+            inst = p.extra.get("installation", "")
+            kind = "runtime" if p.extra.get("runtime") else "app"
+            base = install_root(inst)
+            info = {}
+            if base:
+                try:
+                    info["installed"] = os.stat(os.path.join(base, kind, p.name)).st_mtime
+                except OSError:
+                    pass
+            if not p.extra.get("runtime"):
+                info["icon"] = p.name  # экспортированные иконки подключаются в тему (см. export_icon_dirs)
+            res[p.name] = info
+        return res
 
     def remove_cmd(self, names, installs=None):
         """installs: {app: 'system'|'user'}; system-установки — через pkexec."""

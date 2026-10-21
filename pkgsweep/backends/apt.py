@@ -1,6 +1,9 @@
 import os
 import re
 
+import glob
+
+from . import meta
 from .base import Backend, Package, Simulation, have, run
 
 SEP = "\t"
@@ -71,6 +74,23 @@ def parse_simulation(text):
     return out
 
 
+def desktop_index(info_dir="/var/lib/dpkg/info"):
+    """pkg -> .desktop-файлы (по спискам файлов dpkg) и mtime *.list как запасная дата установки."""
+    desktops, mtimes = {}, {}
+    pat = re.compile(r"^(/usr/share/applications/[^/\n]+\.desktop)$", re.M)
+    for path in glob.glob(os.path.join(info_dir, "*.list")):
+        pkg = os.path.basename(path)[:-5].split(":")[0]
+        try:
+            mtimes[pkg] = os.stat(path).st_mtime
+            with open(path, encoding="utf-8", errors="replace") as f:
+                found = pat.findall(f.read())
+        except OSError:
+            continue
+        if found:
+            desktops.setdefault(pkg, []).extend(found)
+    return {"desktops": desktops, "mtimes": mtimes}
+
+
 class AptBackend(Backend):
     source = "apt"
 
@@ -81,6 +101,34 @@ class AptBackend(Backend):
         _, manual = run(["apt-mark", "showmanual"])
         rc, out = run(["dpkg-query", "-W", "-f", QUERY_FMT])
         return parse_query(out, parse_manual(manual))
+
+    def collect(self, pkgs):
+        langs = meta.user_langs()
+        index = desktop_index()
+        log = meta.read_dpkg_logs()
+        tr = meta.read_translations(langs) if langs and langs[-1] != "en" else {}
+        res = {}
+        for p in pkgs:
+            base = p.name.split(":")[0]
+            info = {}
+            entries = []
+            for path in index["desktops"].get(base, []):
+                try:
+                    with open(path, encoding="utf-8", errors="replace") as f:
+                        entries.append(meta.parse_desktop(f.read(), langs))
+                except OSError:
+                    pass
+            best = meta.pick_desktop(entries)
+            if best:
+                info["display_name"] = best["name"]
+                info["icon"] = best["icon"]
+                prog = meta.exec_program(best["exec"])
+                if prog:
+                    info["last_used"] = meta.last_used_from_atime(prog)
+            info["description"] = (meta.desktop_summary(best) if best else "") or tr.get(base, "")
+            info["installed"] = log.get(base) or index["mtimes"].get(base)
+            res[p.name] = info
+        return res
 
     def _info(self, names):
         rc, out = run(["dpkg-query", "-W", "-f", QUERY_FMT] + list(names))

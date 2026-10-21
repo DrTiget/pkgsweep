@@ -1,0 +1,15 @@
+[Desktop Entry]
+Type=Application
+Name=Image Viewer
+Name[ru]=Просмотр изображений
+Name[de]=Bildbetrachter
+GenericName=Viewer
+Comment=View images
+Comment[ru]=Просмотр и печать изображений
+Exec=env GDK_BACKEND=x11 /usr/bin/eog --new-window %U
+Icon=org.gnome.eog
+NoDisplay=false
+
+[Desktop Action new]
+Name=Hidden action
+Name[ru]=Действие

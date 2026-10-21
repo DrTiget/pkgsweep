@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type=Application
+Name=Helper
+NoDisplay=true
+Icon=${SNAP}/meta/gui/icon.png
+Exec=helper

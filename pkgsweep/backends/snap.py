@@ -1,6 +1,8 @@
+import glob
 import os
 import re
 
+from . import meta
 from .base import Backend, Package, have, run
 
 SYSTEM_RE = re.compile(r"^(core\d*|snapd|bare|gnome-.*|gtk-common-themes|mesa-.*|"
@@ -38,6 +40,44 @@ def snap_size(name, rev):
         return 0
 
 
+def _read(path):
+    try:
+        with open(path, encoding="utf-8", errors="replace") as f:
+            return f.read()
+    except OSError:
+        return ""
+
+
+def collect_one(name, rev, langs, root="/snap", snaps="/var/lib/snapd/snaps",
+                exported="/var/lib/snapd/desktop/applications"):
+    cur = os.path.join(root, name, "current")
+    entries = []
+    for pat in (os.path.join(exported, name + "_*.desktop"), os.path.join(cur, "meta/gui/*.desktop")):
+        for path in sorted(glob.glob(pat)):
+            entries.append(meta.parse_desktop(_read(path), langs))
+        if entries:
+            break
+    best = meta.pick_desktop(entries)
+    yaml = meta.parse_snap_yaml(_read(os.path.join(cur, "meta/snap.yaml")))
+    info = {}
+    if best:
+        info["display_name"] = best["name"]
+        icon = meta.resolve_icon(best["icon"], cur)
+        if icon.startswith("/") and not os.path.exists(icon):
+            icon = ""
+        info["icon"] = icon
+    elif yaml.get("title"):
+        info["display_name"] = yaml["title"]
+    info["description"] = (meta.desktop_summary(best) if best else "") or yaml.get("summary", "")
+    for cand in (os.path.join(snaps, f"{name}_{rev}.snap"), os.path.join(root, name)):
+        try:
+            info["installed"] = os.stat(cand).st_mtime
+            break
+        except OSError:
+            continue
+    return info
+
+
 class SnapBackend(Backend):
     source = "snap"
 
@@ -55,6 +95,13 @@ class SnapBackend(Backend):
                                 protected=e["name"] in ("snapd", "core", "bare") or e["name"].startswith("core"),
                                 extra={"rev": e["rev"]}))
         return pkgs
+
+    def collect(self, pkgs):
+        langs = meta.user_langs()
+        res = {}
+        for p in pkgs:
+            res[p.name] = collect_one(p.name, p.extra.get("rev", ""), langs)
+        return res
 
     def remove_cmd(self, names):
         return [["pkexec", "snap", "remove"] + list(names)]
