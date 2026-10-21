@@ -1,79 +1,131 @@
-# PkgSweep — менеджер установленных программ
+<div align="center">
 
-Десктопное приложение для Ubuntu 26.04 (GNOME): единый список пакетов APT, Snap и Flatpak,
-поиск, фильтры, безопасное удаление с предпросмотром. Python 3 + GTK4 + libadwaita.
+<img src="data/io.github.drtiget.PkgSweep.svg" width="96" alt="PkgSweep">
 
-> ⚠️ Версия 0.2 — ранняя. Интерфейс пока не проверен на реальной Ubuntu 26.04, баги — в Issues.
+# PkgSweep
 
-![Ubuntu 26.04](https://img.shields.io/badge/Ubuntu-26.04-E95420?logo=ubuntu&logoColor=white) ![GTK4](https://img.shields.io/badge/GTK-4%20%2B%20libadwaita-4A86CF) ![License: MIT](https://img.shields.io/badge/license-MIT-green)
+**Удобное удаление программ в Ubuntu — APT, Snap и Flatpak в одном окне**
 
-## Быстрый старт
+![Ubuntu 26.04](https://img.shields.io/badge/Ubuntu-26.04-E95420?logo=ubuntu&logoColor=white)
+![GNOME](https://img.shields.io/badge/GNOME-GTK4%20%2B%20libadwaita-4A86CF?logo=gnome&logoColor=white)
+![Python](https://img.shields.io/badge/Python-3-3776AB?logo=python&logoColor=white)
+![Version](https://img.shields.io/badge/version-0.2.1-blue)
+![License: MIT](https://img.shields.io/badge/license-MIT-green)
 
-    curl -fsSL https://raw.githubusercontent.com/DrTiget/pkgsweep/main/install.sh | bash
+</div>
 
-Скрипт сам скачает архив в `~/.local/share/pkgsweep`, при необходимости поставит
-`python3-gi gir1.2-gtk-4.0 gir1.2-adw-1` через `sudo apt`, создаст ярлык в меню приложений и иконку.
-Удаление: `curl -fsSL https://raw.githubusercontent.com/DrTiget/pkgsweep/main/install.sh | bash -s -- --uninstall`
+---
 
-Из клона репозитория то же самое делает `./install.sh`.
+Чтобы удалить APT-пакет, нужно знать его точное имя, а «Центр приложений» показывает далеко не всё.
+PkgSweep собирает все установленные программы в один список — с нормальными названиями, иконками,
+размером и датами — и позволяет удалить лишнее в пару кликов, не сломав систему.
 
-## Зависимости
+## ✨ Возможности
 
-    sudo apt install python3-gi gir1.2-gtk-4.0 gir1.2-adw-1
+- 📦 **Всё в одном списке** — пакеты APT, Snap и Flatpak.
+- 🏷️ **Человеческие названия и иконки** — «Firefox», а не `firefox`; описания на русском, если есть перевод.
+- 🔍 **Поиск и фильтры** — живой поиск, фильтр по источнику, «только установленные вручную»,
+  режим «Программы / Программы и утилиты / Всё» — библиотеки скрыты по умолчанию.
+- 📊 **Размер и даты** — сортировка по размеру, дате установки и последнего использования.
+- 🗑️ **Пакетное удаление** — отметьте несколько программ и удалите разом; итог освобождаемого места виден сразу.
+- 👀 **Предпросмотр** — перед удалением показано *всё*, что уйдёт вместе с выбранным (включая скрытые библиотеки).
+- 🛡️ **Защита системы** — ядро, `gnome-shell`, `systemd`, `apt`, `ubuntu-desktop` и другие критичные пакеты
+  помечены замком; если удаление их затронет — красное предупреждение и блокировка до явного подтверждения.
+- 🧹 **Уборка хвостов** — после удаления предлагается `apt autoremove --purge`.
 
-Snap и Flatpak необязательны — если не установлены, источник пропускается.
+## 🚀 Установка
 
-## Запуск
+Одна команда — скачает программу, при необходимости поставит зависимости и добавит ярлык в меню приложений:
 
-Из каталога проекта: `python3 -m pkgsweep` или `bin/pkgsweep`.
+```bash
+curl -fsSL https://raw.githubusercontent.com/DrTiget/pkgsweep/main/install.sh | bash
+```
 
-## Установка
+После этого ищите **PkgSweep** в меню приложений. Та же команда обновляет программу до последней версии.
 
-- В `~/.local`: `./install.sh` (удаление: `./install.sh --uninstall`).
-- Пакет .deb: `./build-deb.sh`, затем `sudo apt install ./pkgsweep_0.2.1_all.deb`.
+<details>
+<summary>Удаление PkgSweep</summary>
 
-## Возможности
+```bash
+curl -fsSL https://raw.githubusercontent.com/DrTiget/pkgsweep/main/install.sh | bash -s -- --uninstall
+```
+</details>
 
-- Колонки: иконка и название программы (имя пакета — мелким шрифтом ниже), источник (бейдж), версия, размер,
-  дата установки, дата последнего использования, описание; сортировка кликом по заголовку (имя, размер, даты).
-- Названия, описания и иконки берутся из `.desktop` пакета с учётом локали (`Name[ru]`, `Comment[ru]`);
-  для APT без `.desktop` — перевод описания из `Translation-ru` в `/var/lib/apt/lists`, если он установлен;
-  для Flatpak — локализованное описание из `flatpak list`. Иначе показывается имя пакета / английское описание.
-- Тяжёлый сбор метаданных идёт в фоне после показа списка и кэшируется по имени пакета.
-- Живой поиск по имени и описанию; фильтр по источнику.
-- Переключатель «Только установленные вручную» (по умолчанию включён): скрывает APT-зависимости,
-  системные базы snap (core*, snapd, gnome-*, mesa-* …) и рантаймы Flatpak.
-- Фильтр «Показывать»: Программы / Программы и утилиты (по умолчанию) / Всё. Библиотеки (`lib*`, `*-dev`,
-  `python3-*`, `gir1.2-*`, Section `libs` и т. п., snap-базы, рантаймы Flatpak) скрыты; в статусе — «скрыто N библиотек».
-  Фильтр влияет только на список: симуляция удаления по-прежнему показывает все удаляемые библиотеки.
-- Чекбоксы, итог суммарного размера выбранного.
-- Удаление: диалог с симуляцией `apt-get -s purge` (показаны ВСЕ удаляемые пакеты), затем
-  `pkexec apt-get -y purge`, `pkexec snap remove`, `flatpak uninstall -y` (system-установки — через pkexec).
-  Вывод — в окне журнала, UI не блокируется. После APT-удаления предлагается `autoremove --purge`.
-- Защита: пакеты Essential / Priority required|important и список (ubuntu-desktop*, gnome-shell, gdm3,
-  systemd, network-manager, ядро текущей версии, sudo, apt, dpkg, snapd, xorg, pipewire, nautilus …)
-  помечены замком; если симуляция их затрагивает — красное предупреждение, «Удалить» заблокировано до галочки «Я понимаю».
+<details>
+<summary>Установка из исходников / сборка .deb</summary>
 
-## Откуда берутся даты
+```bash
+sudo apt install git python3-gi gir1.2-gtk-4.0 gir1.2-adw-1
+git clone https://github.com/DrTiget/pkgsweep.git
+cd pkgsweep
+./install.sh                 # установка в ~/.local
+# или запуск без установки:
+python3 -m pkgsweep
+# или пакет .deb:
+./build-deb.sh && sudo apt install ./pkgsweep_0.2.1_all.deb
+```
+</details>
 
-- **Установка.** APT: самая ранняя запись `install` в `/var/log/dpkg.log*` (включая `.gz`), иначе mtime
-  `/var/lib/dpkg/info/<пакет>.list`. Snap: mtime файла `/var/lib/snapd/snaps/<имя>_<rev>.snap`. Flatpak: mtime каталога установки.
-  Если логи ротированы и удалены, у старых пакетов будет дата сборки образа/установки системы.
-- **Последнее использование — приблизительно.** Берётся atime исполняемого файла из `Exec=` в `.desktop`
-  (только APT). При монтировании с `relatime` (по умолчанию) atime обновляется не чаще раза в сутки,
-  при `noatime` не обновляется вовсе; если файл не читали после установки, показывается «неизвестно».
-  Для Snap и Flatpak дата использования недоступна.
+### Требования
 
-## Структура
+- Ubuntu 26.04 (или другой дистрибутив с GNOME, GTK 4 и libadwaita)
+- `python3-gi`, `gir1.2-gtk-4.0`, `gir1.2-adw-1` — ставятся установщиком автоматически
+- Snap и Flatpak — по желанию: если их нет, соответствующий источник просто не показывается
 
-`pkgsweep/backends/{apt,snap,flatpak}.py` — `list()`, `simulate_remove()`, `remove_cmd()`;
-`pkgsweep/backends/meta.py` — парсеры .desktop/dpkg.log/Translation; `pkgsweep/enrich.py` — фоновый сбор с кэшем;
-`pkgsweep/model.py` — логика выбора и дат; `pkgsweep/ui/` — окно; `tests/` — тесты парсинга.
+## 🧭 Как пользоваться
 
-## Тесты
+1. Откройте PkgSweep — список загрузится сразу, названия и иконки подтянутся за пару секунд.
+2. Найдите ненужное поиском или отсортируйте по размеру.
+3. Отметьте галочками и нажмите **«Удалить»**.
+4. Проверьте список в окне предпросмотра и подтвердите — система спросит пароль.
 
-    python3 -m pytest tests
+> 💡 Если в предпросмотре появилось красное предупреждение — удаление заденет системные компоненты.
+> Скорее всего, стоит отменить.
 
-## Лицензия
+## ❓ Вопросы
 
-MIT — см. [LICENSE](LICENSE).
+<details>
+<summary>Откуда берутся даты установки и использования?</summary>
+
+- **Установка.** APT — из журнала `/var/log/dpkg.log*`, точная. Snap и Flatpak — по дате файлов, приблизительная.
+- **Последнее использование** — только для APT-программ и приблизительно (с точностью до суток):
+  по времени последнего чтения исполняемого файла. Для Snap и Flatpak эта дата недоступна.
+</details>
+
+<details>
+<summary>Почему описание на английском?</summary>
+
+Русское описание берётся из ярлыка программы или из переводов APT (`Translation-ru`).
+Если перевода нет ни там, ни там — показывается оригинал.
+</details>
+
+<details>
+<summary>Чем отличаются «программы», «утилиты» и «библиотеки»?</summary>
+
+- **Программы** — всё, что есть в меню приложений.
+- **Утилиты** — консольные инструменты, шрифты, драйверы и прочее.
+- **Библиотеки** — `lib*`, `*-dev`, `python3-*`, `gir1.2-*`, рантаймы Flatpak, базы Snap. Обычно их не удаляют
+  вручную — они уходят сами вместе с программами через `autoremove`.
+</details>
+
+## 🛠️ Разработка
+
+```
+pkgsweep/
+├── backends/      # apt.py, snap.py, flatpak.py — list(), simulate_remove(), remove_cmd(); meta.py — парсеры
+├── classify.py    # программа / утилита / библиотека
+├── enrich.py      # фоновый сбор названий, иконок, дат (с кэшем)
+├── model.py       # модель списка и выбора
+└── ui/            # окно GTK4 + libadwaita
+tests/             # тесты на фикстурах
+```
+
+```bash
+python3 -m pytest tests
+```
+
+Правила участия — в [CONTRIBUTING.md](CONTRIBUTING.md), история изменений — в [CHANGELOG.md](CHANGELOG.md).
+
+## 📄 Лицензия
+
+[MIT](LICENSE) © DrTiget
