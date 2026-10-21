@@ -1,5 +1,6 @@
 import os
 
+from ..classify import flatpak_kind
 from .base import Backend, Package, have, run
 
 COLUMNS = "application,name,version,size,installation,description"
@@ -31,7 +32,7 @@ def parse_list(text, runtime):
         desc = c[5].strip() if len(c) > 5 else ""
         pkgs.append(Package(name=app, display_name=name, source="flatpak", version=ver,
                             size=parse_size(size), description=desc or (name if name != app else ""),
-                            manual=not runtime, extra={"installation": inst, "runtime": runtime}))
+                            manual=not runtime, kind=flatpak_kind(runtime), extra={"installation": inst, "runtime": runtime}))
     return pkgs
 
 

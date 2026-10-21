@@ -3,6 +3,7 @@ import os
 import re
 
 from . import meta
+from ..classify import snap_kind
 from .base import Backend, Package, have, run
 
 SYSTEM_RE = re.compile(r"^(core\d*|snapd|bare|gnome-.*|gtk-common-themes|mesa-.*|"
@@ -91,7 +92,7 @@ class SnapBackend(Backend):
             system = is_system(e["name"]) or "base" in e["notes"]
             pkgs.append(Package(name=e["name"], source="snap", version=e["version"],
                                 size=snap_size(e["name"], e["rev"]),
-                                description="", manual=not system,
+                                description="", manual=not system, kind=snap_kind(system),
                                 protected=e["name"] in ("snapd", "core", "bare") or e["name"].startswith("core"),
                                 extra={"rev": e["rev"]}))
         return pkgs

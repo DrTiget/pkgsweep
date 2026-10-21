@@ -11,6 +11,7 @@ class Package:
     version: str = ""
     size: int = 0        # байты
     description: str = ""
+    kind: str = "other"  # app | library | other
     manual: bool = True  # False -> зависимость/база/рантайм
     protected: bool = False
     display_name: str = ""

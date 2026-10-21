@@ -3,7 +3,7 @@ import threading
 
 _CACHE = {}
 _LOCK = threading.Lock()
-FIELDS = ("display_name", "description", "icon", "installed", "last_used")
+FIELDS = ("display_name", "description", "icon", "installed", "last_used", "kind")
 
 
 def apply(pkg, info):

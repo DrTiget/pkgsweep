@@ -217,3 +217,51 @@ def test_enrich_cache():
     enrich_mod.enrich(pkgs, [FakeBackend()])
     assert FakeBackend.calls == 1  # второй раз — из кэша
     assert pkgs[0].title == "Nice a" and pkgs[0].installed == 42.0 and pkgs[0].description == "eng"
+
+
+# ---------- v0.2.1: классификация ----------
+from pkgsweep import classify  # noqa: E402
+
+
+def test_apt_kind_by_section_and_name():
+    k = classify.apt_kind
+    assert k("zlib1g", "libs") == "library"
+    assert k("foo", "universe/libs") == "library"
+    assert k("foo", "python") == "library"
+    assert k("libvlc5", "video") == "library"
+    assert k("gir1.2-gtk-4.0") == "library" and k("python3-gi") == "library"
+    assert k("libxml-parser-perl") == "library" and k("node-lodash") == "library"
+    assert k("golang-go-dev") == "library" and k("librust-serde-dev") == "library"
+    assert k("openssl-dev") == "library" and k("foo-dbgsym") == "library"
+    assert k("vlc-data") == "library" and k("gnome-common") == "library" and k("x-doc") == "library"
+    assert k("libreoffice-writer", "editors") == "other"  # не библиотека по префиксу lib
+    assert k("htop", "admin") == "other" and k("fonts-dejavu", "fonts") == "other"
+    assert k("libfoo-app", "x", has_app=True) == "app"
+
+
+def test_kinds_from_fixture():
+    pk = {p.name: p for p in apt.parse_query(fx("dpkg_query.txt"), set(), kernel="x")}
+    assert pk["libvlc5:amd64"].kind == "library" and pk["vlc"].kind == "other"
+    assert pk["libreoffice-writer"].kind == "other" and pk["bash"].kind == "other"
+    assert pk["vlc"].extra["section"] == ""
+
+
+def test_snap_flatpak_kinds():
+    assert classify.snap_kind(True) == "library" and classify.snap_kind(False) == "app"
+    assert flatpak.parse_list(fx("flatpak_apps.txt"), False)[0].kind == "app"
+    assert flatpak.parse_list(fx("flatpak_rt.txt"), True)[0].kind == "library"
+    assert {p.name: p.kind for p in [snap.Package(name="x", source="snap", kind=classify.snap_kind(snap.is_system("core22")))]} == {"x": "library"}
+
+
+def test_kind_visible_modes():
+    v = classify.kind_visible
+    assert [v(k, "apps") for k in ("app", "other", "library")] == [True, False, False]
+    assert [v(k, "apps_utils") for k in ("app", "other", "library")] == [True, True, False]
+    assert all(v(k, "all") for k in ("app", "other", "library"))
+
+
+def test_desktop_app_overrides_name_kind():
+    enrich_mod._CACHE.clear()
+    p = Package(name="libfoo", source="apt", kind="library")
+    enrich_mod.apply(p, {"kind": "app"})
+    assert p.kind == "app"

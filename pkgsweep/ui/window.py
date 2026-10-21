@@ -11,6 +11,7 @@ from ..backends import all_backends  # noqa: E402
 from ..backends.apt import AptBackend  # noqa: E402
 from ..backends.flatpak import FlatpakBackend  # noqa: E402
 from ..backends.flatpak import export_icon_dirs  # noqa: E402
+from ..classify import MODES, kind_visible  # noqa: E402
 from ..enrich import enrich  # noqa: E402
 from ..model import cmp, cmp_date, fmt_date, fmt_size, selected as sel_of, summary  # noqa: E402
 from .runner import run_commands  # noqa: E402
@@ -76,6 +77,7 @@ class MainWindow(Adw.ApplicationWindow):
             self.theme.add_search_path(d)
         self._gen = 0
         self.manual_only = True
+        self.mode = "apps_utils"
         self.source = "all"
         self.query = ""
         self._build()
@@ -101,6 +103,10 @@ class MainWindow(Adw.ApplicationWindow):
         self.dd = Gtk.DropDown.new_from_strings([l for _, l in SOURCES])
         self.dd.connect("notify::selected", self._on_source)
         bar.append(self.dd)
+        self.kd = Gtk.DropDown.new_from_strings(["Показывать: " + l for _, l in MODES])
+        self.kd.set_selected(1)
+        self.kd.connect("notify::selected", self._on_kind)
+        bar.append(self.kd)
         self.sw = Gtk.Switch(active=True, valign=Gtk.Align.CENTER)
         self.sw.connect("notify::active", self._on_manual)
         bar.append(self.sw)
@@ -273,14 +279,22 @@ class MainWindow(Adw.ApplicationWindow):
         self.view.get_sorter().changed(Gtk.SorterChange.DIFFERENT)
         self._refilter()
 
-    def _match(self, item):
-        p = item.pkg
+    def _match_base(self, p):
+        """Все фильтры, кроме вида (программа/библиотека)."""
         if self.manual_only and not p.manual:
             return False
         if self.source != "all" and p.source != self.source:
             return False
         q = self.query
         return not q or q in p.title.lower() or q in p.name.lower() or q in p.description.lower()
+
+    def _match(self, item):
+        p = item.pkg
+        return self._match_base(p) and kind_visible(p.kind, self.mode)
+
+    def _on_kind(self, dd, _):
+        self.mode = MODES[dd.get_selected()][0]
+        self._refilter()
 
     def _refilter(self):
         self.filter.changed(Gtk.FilterChange.DIFFERENT)
@@ -306,7 +320,14 @@ class MainWindow(Adw.ApplicationWindow):
         self.del_btn.set_sensitive(bool(sel))
         n, size = summary([i.pkg for i in self.store])
         self.total.set_text(f"Выбрано: {n}, суммарно {fmt_size(size)}")
-        self.status.set_text(f"Показано: {self.sorted.get_n_items()} из {self.store.get_n_items()}")
+        hidden = [i.pkg.kind for i in self.store
+                  if self._match_base(i.pkg) and not kind_visible(i.pkg.kind, self.mode)]
+        txt = f"Показано: {self.sorted.get_n_items()} из {self.store.get_n_items()}"
+        if hidden:
+            libs, other = hidden.count("library"), hidden.count("other")
+            parts = ([f"{libs} библиотек"] if libs else []) + ([f"{other} утилит"] if other else [])
+            txt += "; скрыто " + ", ".join(parts)
+        self.status.set_text(txt)
 
     # ---------- удаление ----------
     def _on_delete(self, *_):

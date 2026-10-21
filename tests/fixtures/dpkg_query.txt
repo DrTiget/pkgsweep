@@ -4,3 +4,4 @@ libvlc5:amd64	3.0.21	1000	optional	no	ii 	VLC core library
 oldpkg	1.0	10	optional	no	rc 	removed, config left
 linux-image-6.8.0-31-generic	6.8.0-31	12000	optional	no	ii 	Signed kernel image
 gnome-shell	47.0	9000	optional	no	ii 	GNOME Shell
+libreoffice-writer	7	100	optional	no	ii 	Office	editors

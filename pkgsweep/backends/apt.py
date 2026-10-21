@@ -4,11 +4,12 @@ import re
 import glob
 
 from . import meta
+from ..classify import apt_kind
 from .base import Backend, Package, Simulation, have, run
 
 SEP = "\t"
 QUERY_FMT = SEP.join(["${Package}", "${Version}", "${Installed-Size}", "${Priority}",
-                      "${Essential}", "${db:Status-Abbrev}", "${binary:Summary}"]) + "\n"
+                      "${Essential}", "${db:Status-Abbrev}", "${binary:Summary}", "${Section}"]) + "\n"
 
 CRITICAL_PATTERNS = [
     r"ubuntu-desktop.*", r"ubuntu-minimal", r"ubuntu-standard", r"gnome-shell",
@@ -45,6 +46,7 @@ def parse_query(text, manual, kernel=None):
         if len(parts) < 7 or not parts[5].startswith("ii"):
             continue
         name, ver, size, prio, ess, _, desc = parts[:7]
+        section = parts[7].strip() if len(parts) > 7 else ""
         base = name.split(":")[0]
         try:
             size_b = int(size) * 1024
@@ -53,7 +55,8 @@ def parse_query(text, manual, kernel=None):
         crit = is_critical(base, prio, ess == "yes", kernel)
         pkgs.append(Package(name=name, source="apt", version=ver, size=size_b,
                             description=desc, manual=base in manual or name in manual,
-                            protected=crit, extra={"priority": prio}))
+                            protected=crit, kind=apt_kind(base, section),
+                            extra={"priority": prio, "section": section}))
     return pkgs
 
 
@@ -121,6 +124,8 @@ class AptBackend(Backend):
             best = meta.pick_desktop(entries)
             if best:
                 info["display_name"] = best["name"]
+                if not best["nodisplay"]:
+                    info["kind"] = "app"
                 info["icon"] = best["icon"]
                 prog = meta.exec_program(best["exec"])
                 if prog:
